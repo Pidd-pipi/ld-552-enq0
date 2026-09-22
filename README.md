@@ -42,10 +42,24 @@ frontend/
 - 职位 Job：创建、编辑、列表筛选、详情、发布/暂停/关闭/重新打开/归档状态机。
 - 候选人 Candidate + 简历 Resume：候选人检索、投递记录、简历状态推进、看板拖拽流转。
 - 面试 Interview：日历视图、安排面试、面试官反馈、评分和结果记录。
-- Offer：创建草稿、审批、发送、接受/拒绝/撤回状态机。
+- Offer：创建草稿、**金额分级审批**、发送、接受/拒绝/撤回状态机；返回当前节点、生效薪资与失败原因，简历状态自动联动。
 - RBAC：HR、INTERVIEWER、HIRING_MANAGER、ADMIN 四类角色；后端 `@Roles()` 控制接口，前端菜单和按钮按角色显示。
 - 数据范围：面试官请求面试列表时仅返回分配给自己的面试；招聘经理按部门过滤职位。
 - 操作审计：职位、简历、面试、Offer 状态变更写入 `audit_logs`，管理员可在候选人详情页查看状态流转历史。
+
+### Offer 金额分级审批规则
+
+| 年薪 | 审批链 |
+|---|---|
+| < 300,000 元 | 招聘经理（HIRING_MANAGER）单级审批 |
+| ≥ 300,000 元 | 招聘经理初审 → 管理员（ADMIN）终审，两级全部通过才可发送 |
+
+- 新增 Offer 状态 `PENDING_APPROVAL`（审批中）；审批只能通过 `POST /api/offers/:id/approvals`（body：`result=APPROVED|REJECTED`、`comment`、`expectedVersion`），不可用状态接口直接置为 `APPROVED`。
+- 每次审批写一条 `OfferApproval` 记录（层级、结果、审批人、**审批链薪资快照**）；全部复核（岗位状态、薪资、并发）与记录写入在同一数据库事务中完成，失败整次回滚——审批记录不会留下半条。
+- 处理前在事务内重新核对：岗位已关闭/归档（`JOB_CLOSED`）、审批链启动后薪资发生变化（`SALARY_CHANGED`）、同一条 Offer 并发（行级咨询锁 + `version` 乐观锁，`CONCURRENT_MODIFICATION`）均整次拒绝。
+- 未完成全部层级发送返回 `409 NOT_FULLY_APPROVED`。
+- 简历联动：发送 → `OFFERED`，接受 → `HIRED`，候选人拒绝或撤回 → 恢复 `INTERVIEWING`。
+- 所有写操作响应统一包含 `currentNode`（如 `PENDING_ADMIN`）、`effectiveSalary`、`failureReason`（成功为 `null`）。
 
 ## 默认账号
 
@@ -97,7 +111,7 @@ docker compose up --build
 - `GET /api/candidates/:id/resumes`、`GET /api/candidates/:id/interviews`、`GET /api/candidates/:id/offers`
 - `POST /api/resumes`、`PATCH /api/resumes/:id/status`
 - `GET /api/interviews?startDate=&endDate=&interviewerId=`、`POST /api/interviews`、`PATCH /api/interviews/:id`
-- `POST /api/offers`、`PATCH /api/offers/:id/status`
+- `POST /api/offers`、`POST /api/offers/:id/approvals`（分级审批）、`PATCH /api/offers/:id/status`、`PATCH /api/offers/:id`
 - `GET /api/audit-logs`、`GET /api/audit-logs/candidate/:id`
 
 ## 枚举使用位置清单

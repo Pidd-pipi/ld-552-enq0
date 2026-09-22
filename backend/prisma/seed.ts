@@ -28,7 +28,7 @@ async function main() {
   const r1 = await prisma.resume.create({ data: { candidateId: c1.id, jobId: job1.id, resumeUrl: 'https://files.example.com/resumes/xuchen.pdf', coverLetter: '希望加入高质量工程团队。', status: ResumeStatus.INTERVIEWING } });
   const r2 = await prisma.resume.create({ data: { candidateId: c2.id, jobId: job1.id, resumeUrl: 'https://files.example.com/resumes/wangyining.pdf', status: ResumeStatus.SCREENING } });
   await prisma.interview.create({ data: { resumeId: r1.id, interviewerId: interviewer.id, round: 1, scheduledAt: new Date(Date.now() + 86400000), duration: 60, type: InterviewType.TECHNICAL, result: InterviewResult.PENDING, notes: '重点考察组件架构与状态管理。' } });
-  await prisma.offer.create({ data: { candidateId: c1.id, jobId: job1.id, salary: '42000', startDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30), status: OfferStatus.DRAFT, approverId: manager.id } });
+  await prisma.offer.create({ data: { candidateId: c1.id, jobId: job1.id, salary: '420000', startDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30), status: OfferStatus.DRAFT, approverId: manager.id } });
   await prisma.auditLog.create({ data: { actorId: hr.id, action: 'Resume_STATUS_CHANGE', entity: 'Resume', entityId: r1.id, beforeStatus: 'SHORTLISTED', afterStatus: 'INTERVIEWING', reason: '通过电话初筛', ipAddress: '127.0.0.1', candidateId: c1.id } });
   console.log({ admin: admin.email, hr: hr.email, manager: manager.email, interviewer: interviewer.email, password: 'talentflow123' });
 }

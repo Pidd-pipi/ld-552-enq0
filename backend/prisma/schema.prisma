@@ -33,11 +33,22 @@ enum InterviewResult {
 
 enum OfferStatus {
   DRAFT
+  PENDING_APPROVAL
   APPROVED
   SENT
   ACCEPTED
   REJECTED
   WITHDRAWN
+}
+
+enum ApprovalLevel {
+  HIRING_MANAGER
+  ADMIN
+}
+
+enum OfferApprovalResult {
+  APPROVED
+  REJECTED
 }
 
 enum InterviewType {
@@ -61,10 +72,11 @@ model User {
   passwordHash   String
   role           UserRole
   department     String?
-  managedJobs    Job[]      @relation("HiringManagerJobs")
-  interviews     Interview[]
-  approvedOffers Offer[]    @relation("OfferApprover")
-  auditLogs      AuditLog[]
+  managedJobs      Job[]           @relation("HiringManagerJobs")
+  interviews       Interview[]
+  approvedOffers   Offer[]         @relation("OfferApprover")
+  offerApprovals   OfferApproval[] @relation("OfferApprovalRecordApprover")
+  auditLogs        AuditLog[]
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
 }
@@ -132,18 +144,36 @@ model Interview {
 }
 
 model Offer {
-  id          Int         @id @default(autoincrement())
-  candidateId Int
-  jobId       Int
-  salary      Decimal
-  startDate   DateTime
-  status      OfferStatus
-  approverId  Int
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  candidate   Candidate   @relation(fields: [candidateId], references: [id])
-  job         Job         @relation(fields: [jobId], references: [id])
-  approver    User        @relation("OfferApprover", fields: [approverId], references: [id])
+  id              Int             @id @default(autoincrement())
+  candidateId     Int
+  jobId           Int
+  salary          Decimal
+  effectiveSalary Decimal?
+  startDate       DateTime
+  status          OfferStatus
+  approverId      Int
+  version         Int             @default(1)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  candidate       Candidate       @relation(fields: [candidateId], references: [id])
+  job             Job             @relation(fields: [jobId], references: [id])
+  approver        User            @relation("OfferApprover", fields: [approverId], references: [id])
+  approvals       OfferApproval[]
+}
+
+model OfferApproval {
+  id         Int                 @id @default(autoincrement())
+  offerId    Int
+  level      ApprovalLevel
+  result     OfferApprovalResult
+  approverId Int
+  comment    String?
+  salarySnap Decimal
+  createdAt  DateTime            @default(now())
+  offer      Offer               @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  approver   User                @relation("OfferApprovalRecordApprover", fields: [approverId], references: [id])
+  @@unique([offerId, level])
+  @@index([offerId])
 }
 
 model AuditLog {
