@@ -4,3 +4,9 @@ export enum InterviewResult { PASS = 'PASS', FAIL = 'FAIL', PENDING = 'PENDING' 
 export enum OfferStatus { DRAFT = 'DRAFT', APPROVED = 'APPROVED', SENT = 'SENT', ACCEPTED = 'ACCEPTED', REJECTED = 'REJECTED', WITHDRAWN = 'WITHDRAWN' }
 export enum InterviewType { PHONE = 'PHONE', ONSITE = 'ONSITE', VIDEO = 'VIDEO', TECHNICAL = 'TECHNICAL' }
 export enum UserRole { HR = 'HR', INTERVIEWER = 'INTERVIEWER', HIRING_MANAGER = 'HIRING_MANAGER', ADMIN = 'ADMIN' }
+export enum OfferApprovalNode { HIRING_MANAGER = 'HIRING_MANAGER', ADMIN = 'ADMIN' }
+export enum OfferApprovalStatus { PENDING = 'PENDING', APPROVED = 'APPROVED', REJECTED = 'REJECTED' }
+
+// 年薪分级审批阈值（单位：元/年，按 12 个月薪折算）。达到该阈值需经理 + 管理员两级审批。
+export const OFFER_SENIOR_APPROVAL_ANNUAL_THRESHOLD = 300000;
+export const MONTHS_PER_YEAR = 12;
